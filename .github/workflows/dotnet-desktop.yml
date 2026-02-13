@@ -1,34 +1,39 @@
 name: Build SharpGPOAbuse
 
+# Trigger on push and PR
 on:
   push:
-    branches: ["master"]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: ["master"]
+    branches: [ "main", "master" ]
 
 jobs:
   build:
-    strategy:
-      matrix:
-        configuration: [Debug, Release]
-
+    name: Build on Windows
     runs-on: windows-latest
 
-    env:
-      Solution_Name: SharpGPOAbuse.sln
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # 1) Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
+      # 2) Setup .NET SDK (adjust version if needed)
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.0.x'
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
+      # 3) Restore dependencies
       - name: Restore NuGet packages
-        run: nuget restore $env:Solution_Name
+        run: dotnet restore SharpGPOAbuse.sln
 
+      # 4) Build solution in Release config
       - name: Build solution
-        run: msbuild $env:Solution_Name /p:Configuration=${{ matrix.configuration }} /p:Platform="Any CPU" /m
+        run: dotnet build SharpGPOAbuse.sln --configuration Release --no-restore
+
+      # 5) Publish artifacts (optional)
+      - name: Publish build output
+        uses: actions/upload-artifact@v3
+        with:
+          name: SharpGPOAbuse-bin
+          path: SharpGPOAbuse/**/bin/Release/
