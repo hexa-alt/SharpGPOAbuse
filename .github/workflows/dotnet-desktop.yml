@@ -15,25 +15,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup .NET SDK
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'   # adjust if project targets older framework
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
 
-      # Restore dependencies
-      - name: Restore
-        run: dotnet restore SharpGPOAbuse.sln
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
 
-      # Build solution
-      - name: Build
-        run: dotnet build SharpGPOAbuse.sln --configuration Release --no-restore
+      - name: Restore NuGet packages
+        run: nuget restore $env:Solution_Name
 
-      # Upload build artifacts (UPDATED TO v4)
-      - name: Upload artifact
+      - name: Build solution
+        run: msbuild $env:Solution_Name /p:Configuration=${{ matrix.configuration }} /p:Platform="Any CPU" /m
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: SharpGPOAbuse-bin
-          path: |
-            **/bin/Release/**/*.exe
-            **/bin/Release/**/*.dll
+          name: SharpGPOAbuse-${{ matrix.configuration }}
+          path: SharpGPOAbuse/bin/${{ matrix.configuration }}/
+          if-no-files-found: error
